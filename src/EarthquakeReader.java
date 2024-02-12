@@ -1,4 +1,8 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Scanner;
+import java.io.IOException;
+
 
 // CST-283
 // Aaron Pelto
@@ -19,134 +23,199 @@ Similarly, output can be directed to the Java console to restrict your earthquak
 A simple query will likely generate a long list of earthquake events.
 Pull all matching quakes from you data (stored in the array-based data structure) and list all that satisfy the query.
 Once all information has been displayed, be sure to return to the menu to give the user the option to perform another query or quit.
-Formatting of the "raw" quake data is expected. For example, if the following data line from the file matches
-the query:
-2015-05-02T16:23:07.580Z|42.2357|-85.4285|4.2|5km S of Galesburg; Michigan
-reformat it for your output to look like:
-02 MAY 15 1623Z, (42.24,-85.43), Mag: 4.2, 5km S of Galesburg; Michigan
-
-
+Formatting of the "raw" quake data is expected.
+For example, if the following data line from the file matches the query: 2015-05-02T16:23:07.580Z|42.2357|-85.4285|4.2|5km S of Galesburg; Michigan
+reformat it for your output to look like: 02 MAY 15 1623Z, (42.24,-85.43), Mag: 4.2, 5km S of Galesburg; Michigan
  */
 
-public class EarthquakeReader {
-    public static void main(String[] args) {
-        earthquakeMenu();
-    }
 
-    public static void earthquakeMenu() {
-        Scanner menuInput = new Scanner(System.in);
 
-        do {
-            System.out.println("Earthquake Data Query");
-            System.out.println("1. Query by Date");
-            System.out.println("2. Query by Query by Longitude/Latitude");
-            System.out.println("3. Query by Magnitude");
-            System.out.println("4. Query by Location");
-            System.out.println("5. Exit");
-            System.out.println("Enter your choice: ");
+    // Method to display the earthquake data query system menu
+    // The method reads the user's input and performs the specified query
+    // The method calls the queryRegion, queryDate, and queryMagnitude methods based on the user's input
+    // The method also validates the user's input and displays an error message for invalid input
+    // The method continues to display the menu until the user chooses to exit
+    // The method also closes the scanner when the user chooses to exit
+    public class EarthquakeReader {
+        private static final String FILENAME = "quakes.txt";
 
-            // Scanner Input
-            int choice = menuInput.nextInt();
+        public static void main(String[] args) {
+            earthquakeReaderMenu();
+        }
 
-            // Earthquake Object
-            // Initialize to null
-            Earthquake earthquake = null;
+        // Method to create the menu for the earthquake data query system
+        // The method reads the user's input and performs the specified query
+        // The method calls the queryRegion, queryDate, and queryMagnitude methods based on the user's input
+        // The method also validates the user's input and displays an error message for invalid input
+        // The method continues to display the menu until the user chooses to exit
+        // The method also closes the scanner when the user chooses to exit
+        public static void earthquakeReaderMenu() {
+            Scanner scanner = new Scanner(System.in);
 
-            // Menu Options
-            switch (choice) {
-                case 1:
-                    // Create new Earthquake object
-                    // Query by Date
-                    // Call queryByDate method
-                    System.out.println("Query by Date");
-                    String date = dateInput();
-                    earthquake = new Earthquake(date, "", 0.0, 0.0, 0.0,"");
-                    earthquake.queryByDate(date);
-                    break;
-                case 2:
-                    // Create new Earthquake object
-                    // Query by Longitude/Latitude
-                    // Call queryByLongitudeLatitude method
-                    System.out.println("Query by Longitude/Latitude");
-                    double[] longitudeLatitude = longitudeLatitudeInput();
-                    earthquake = new Earthquake("","", longitudeLatitude[0], longitudeLatitude[1], 0.0, "");
-                    earthquake.queryByLongitudeLatitude(longitudeLatitude[0], longitudeLatitude[1]);
-                    break;
-                case 3:
-                    // Create new Earthquake object
-                    // Query by Magnitude
-                    // Call queryByMagnitude method
-                    System.out.println("Query by Magnitude");
-                    double magnitude = magnitudeInput();
-                    earthquake = new Earthquake("", "", 0.0,0.0, magnitude, "");
-                    earthquake.queryByMagnitude(magnitude);
-                    break;
-                case 4:
-                    // Create new Earthquake object
-                    // Query by Location
-                    // Call queryByLocation method
-                    System.out.println("Query by Location");
-                    String location = locationInput();
-                    earthquake = new Earthquake("", "", 0.0, 0.0,0.0, location);
-                    earthquake.queryByLocation(location);
-                    break;
-                case 5:
-                    // Exit Program
-                    // Close Scanner
-                    // Exit Program
-                    System.out.println("Exiting Program");
-                    menuInput.close();
-                    System.exit(0);
-                    break;
-                default:
-                    System.out.println("Invalid choice. Please select 1, 2, 3, 4, or 5.");
-                    break;
+            Earthquake[] earthquakeRecords = readEarthquakeData();
+
+            boolean exit = false;
+            while (!exit) {
+                System.out.println("Earthquake Data Query System");
+                System.out.println("1. Query the Earthquake Data");
+                System.out.println("2. Exit");
+                System.out.println("Enter your menu choice. 1 or 2:");
+
+                int menuChoice = scanner.nextInt();
+                scanner.nextLine(); // Consume newline
+
+                switch (menuChoice) {
+                    case 1:
+                        System.out.println("Enter your query:");
+                        String queryInput = scanner.nextLine();
+                        String queryType = String.valueOf(queryInput.charAt(0));
+                        switch (queryType) {
+                            case "R":
+                                queryRegion(queryInput, earthquakeRecords);
+                                break;
+                            case "D":
+                                queryDate(queryInput, earthquakeRecords);
+                                break;
+                            case "M":
+                                queryMagnitude(queryInput, earthquakeRecords);
+                                break;
+                            default:
+                                System.out.println("Invalid query type. Please enter one of the following letters. R, D, or M");
+                        }
+                        break;
+                    case 2:
+                        System.out.println("Exiting");
+                        scanner.close();
+                        exit = true;
+                        break;
+                    default:
+                        System.out.println("Invalid menu choice. Please enter one of the following numbers. 1, or 2");
+                }
+            } while (true);
+        }
+
+        // Method to read the earthquake data from the file and store it in an array of Earthquake objects
+        // The method reads each line from the file and splits the line into parts using the pipe character as the delimiter
+        // The method then creates an Earthquake object using the parts and stores it in the array
+        // The method also handles invalid records and returns an array of Earthquake objects
+        private static Earthquake[] readEarthquakeData() {
+            final int MAX_RECORDS = 121853;
+            Earthquake[] earthquakeRecords = new Earthquake[MAX_RECORDS];
+            int count = 0;
+
+            try {
+                File earthquakeFile = new File(FILENAME);
+                Scanner scanner = new Scanner(earthquakeFile);
+
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine().trim();
+                    String[] parts = line.split("\\|");
+                    if (parts.length == 5) {
+                        String datetime = parts[0];
+                        String[] dateTimeParts = datetime.split("T");
+                        String date = dateTimeParts[0];
+                        String time = dateTimeParts[1].substring(0, 5) + "Z";
+                        double latitude = Double.parseDouble(parts[1]);
+                        double longitude = Double.parseDouble(parts[2]);
+                        double magnitude = Double.parseDouble(parts[3]);
+                        String location = parts[4];
+                        earthquakeRecords[count] = new Earthquake(date, time, latitude, longitude, magnitude, location);
+                        count++;
+                    } else {
+                        System.out.println("Invalid record: " + line);
+                    }
+                }
+                scanner.close();
+            } catch (FileNotFoundException e) {
+                System.out.println("File not found: " + e.getMessage());
             }
-        } while (true);
+            Earthquake[] result = new Earthquake[count];
+            System.arraycopy(earthquakeRecords, 0, result, 0, count);
+            return result;
+        }
+
+
+        // Method to query the earthquake data based on the region
+        // The method splits the query input into parts using the comma as the delimiter
+        // The method then validates the input and displays the earthquakes within the specified region
+        // The method also handles invalid input and displays an error message
+        private static void queryRegion(String queryInput, Earthquake[] earthquakeRecords) {
+            String[] queryParts = queryInput.split(",");
+            if (queryParts.length != 5) {
+                System.out.println("Invalid query format. Please provide minLat, maxLat, minLon, and maxLon.");
+                return;
+            }
+
+            try {
+                double minLat = Double.parseDouble(queryParts[1]);
+                double maxLat = Double.parseDouble(queryParts[2]);
+                double minLon = Double.parseDouble(queryParts[3]);
+                double maxLon = Double.parseDouble(queryParts[4]);
+
+                System.out.println("Earthquakes within the specified region:");
+                for (Earthquake earthquake : earthquakeRecords) {
+                    double latitude = earthquake.getLatitude();
+                    double longitude = earthquake.getLongitude();
+                    if (latitude >= minLat && latitude <= maxLat && longitude >= minLon && longitude <= maxLon) {
+                        System.out.println(earthquake);
+                    }
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid latitude or longitude format.");
+            }
+        }
+
+        // Method to query the earthquake data based on the date
+        // The method splits the query input into parts using the comma as the delimiter
+        // The method then validates the input and displays the earthquakes within the specified date range
+        // The method also handles invalid input and displays an error message
+        private static void queryDate(String queryInput, Earthquake[] earthquakeRecords) {
+            String[] queryParts = queryInput.split(",");
+            if (queryParts.length != 3) {
+                System.out.println("Invalid query format. Please provide minDate and maxDate.");
+                return;
+            }
+
+            String minDate = queryParts[1];
+            String maxDate = queryParts[2];
+
+            if (Earthquake.validateDateInput(minDate) || Earthquake.validateDateInput(maxDate)) {
+                System.out.println("Invalid date format. Please use yyyy-MM-dd.");
+                return;
+            }
+
+            System.out.println("Earthquakes within the specified date range:");
+            for (Earthquake earthquake : earthquakeRecords) {
+                String earthquakeDate = earthquake.getDate();
+                if (earthquakeDate.compareTo(minDate) >= 0 && earthquakeDate.compareTo(maxDate) <= 0) {
+                    System.out.println(earthquake);
+                }
+            }
+        }
+
+        // Method to query the earthquake data based on the magnitude
+        // The method splits the query input into parts using the comma as the delimiter
+        // The method then validates the input and displays the earthquakes with magnitude equal to or greater than the specified magnitude
+        // The method also handles invalid input and displays an error message
+        private static void queryMagnitude(String queryInput, Earthquake[] earthquakeRecords) {
+            String[] queryParts = queryInput.split(",");
+            if (queryParts.length != 2) {
+                System.out.println("Invalid query format. Please provide minMagnitude.");
+                return;
+            }
+
+            String minMagnitudeStr = queryParts[1];
+            if (Earthquake.validateMagnitudeInput(minMagnitudeStr)) {
+                System.out.println("Invalid magnitude format. Please provide a number >= 4.0.");
+                return;
+            }
+
+            double minMagnitude = Double.parseDouble(minMagnitudeStr);
+            System.out.println("Earthquakes with magnitude equal to or greater than " + minMagnitude + ":");
+            for (Earthquake earthquake : earthquakeRecords) {
+                if (earthquake.getMagnitude() >= minMagnitude) {
+                    System.out.println(earthquake);
+                }
+            }
+        }
     }
-
-    // Scanner Input Methods
-
-    // Date Input
-    // Captures Date input by YYYY-MM-DD
-    public static String dateInput() {
-        Scanner dateInput = new Scanner(System.in);
-        System.out.println("Enter the date (YYYY-MM-DD): ");
-        String date = dateInput.nextLine();
-        System.out.println("You entered: " + date);
-        return date;
-    }
-
-    // Longitude/Latitude Input
-    // Captures Longitude and Latitude input
-    public static double[] longitudeLatitudeInput() {
-        Scanner locationInput = new Scanner(System.in);
-        System.out.println("Enter the latitude (ex., '-12.9364'): ");
-        double latitude = locationInput.nextDouble();
-        System.out.println("Enter the longitude (ex., '45.7323'): ");
-        double longitude = locationInput.nextDouble();
-        System.out.println("You entered latitude: " + latitude + " and longitude: " + longitude);
-        return new double[]{latitude, longitude};
-    }
-
-    // Magnitude Input
-    // Captures Magnitude input
-    public static double magnitudeInput() {
-        Scanner magnitudeInput = new Scanner(System.in);
-        System.out.println("Enter the magnitude: ");
-        double magnitude = magnitudeInput.nextDouble();
-        System.out.println("You entered magnitude: " + magnitude);
-        return magnitude;
-    }
-
-    // Location Input
-    // Captures Location input
-    public static String locationInput() {
-        Scanner locationInput = new Scanner(System.in);
-        System.out.println("Enter the location (ex., '95km W of San Antonio de los Cobres; Argentina'): ");
-        String location = locationInput.nextLine();
-        System.out.println("You entered location: " + location);
-        return location;
-    }
-
-}
