@@ -1,7 +1,6 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
-import java.io.IOException;
 
 
 // CST-283
@@ -14,6 +13,8 @@ import java.io.IOException;
 
 // Requirements
 // 1. No Arraylist or Hashmaps
+// 2. One Query Input
+// 3. Specific Output Format
 
 // Interface Requirements
 /*
@@ -38,6 +39,7 @@ reformat it for your output to look like: 02 MAY 15 1623Z, (42.24,-85.43), Mag: 
     // The method also closes the scanner when the user chooses to exit
     public class EarthquakeReader {
         private static final String FILENAME = "quakes.txt";
+        final static int MAX_RECORDS = 121853;
 
         public static void main(String[] args) {
             earthquakeReaderMenu();
@@ -50,6 +52,7 @@ reformat it for your output to look like: 02 MAY 15 1623Z, (42.24,-85.43), Mag: 
         // The method continues to display the menu until the user chooses to exit
         // The method also closes the scanner when the user chooses to exit
         public static void earthquakeReaderMenu() {
+
             Scanner scanner = new Scanner(System.in);
 
             Earthquake[] earthquakeRecords = readEarthquakeData();
@@ -91,7 +94,7 @@ reformat it for your output to look like: 02 MAY 15 1623Z, (42.24,-85.43), Mag: 
                     default:
                         System.out.println("Invalid menu choice. Please enter one of the following numbers. 1, or 2");
                 }
-            } while (true);
+            }
         }
 
         // Method to read the earthquake data from the file and store it in an array of Earthquake objects
@@ -99,7 +102,6 @@ reformat it for your output to look like: 02 MAY 15 1623Z, (42.24,-85.43), Mag: 
         // The method then creates an Earthquake object using the parts and stores it in the array
         // The method also handles invalid records and returns an array of Earthquake objects
         private static Earthquake[] readEarthquakeData() {
-            final int MAX_RECORDS = 121853;
             Earthquake[] earthquakeRecords = new Earthquake[MAX_RECORDS];
             int count = 0;
 
